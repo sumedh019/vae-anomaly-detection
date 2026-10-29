@@ -228,3 +228,15 @@ class TestDetect:
         with pytest.raises(FileNotFoundError):
             detect(sample_image_256)
 
+
+
+def test_repeat_inspections_are_deterministic(monkeypatch, dummy_checkpoint, sample_image_256):
+    import src.anomaly_detector as ad
+    ad._clear_model_cache()
+    monkeypatch.setattr(ad, "CHECKPOINT_PATH", dummy_checkpoint)
+    first = ad.detect(sample_image_256)
+    torch.randn(50)  # unrelated random draws must not change the inspection
+    second = ad.detect(sample_image_256)
+    assert first.anomaly_score == second.anomaly_score
+    assert np.array_equal(first.reconstructed, second.reconstructed)
+    ad._clear_model_cache()

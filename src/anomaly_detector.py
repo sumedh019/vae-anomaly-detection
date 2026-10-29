@@ -238,7 +238,9 @@ def detect(
 
     # ── Inference ─────────────────────────────
     with torch.inference_mode():
-        recon_tensor, _mu, _logvar = model(input_tensor)  # (1, 3, 128, 128)
+        # Use the latent mean: inspection must not sample a different z on each rerun.
+        mu, _logvar = model.encode(input_tensor)
+        recon_tensor = model.decode(mu)
 
     # ── Postprocess ───────────────────────────
     # target_size = (width, height) matching the original input

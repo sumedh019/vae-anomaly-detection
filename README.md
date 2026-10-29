@@ -96,3 +96,31 @@ pytest tests/ -v
 
 This project is for academic purposes (B.Tech AIML final-year project).
 
+
+## Calibrating inspection verdicts
+
+The inspection page now withholds a verdict until a threshold is calibrated,
+unless you explicitly enable an experimental manual threshold. The old `0.5`
+default is not a validated decision boundary. A score is reconstruction error,
+not a probability that a product is defective; heatmap colours alone are not a
+verdict. “Below threshold” does not certify a defect-free product.
+
+With your trained bottle checkpoint at `models/vae_bottle.pth`, use at least 20
+held-out known-good images from the same product category and capture conditions:
+
+```bash
+python -m src.calibration --normal-dir /path/to/held-out/bottle/good
+```
+
+This writes `models/vae_bottle.calibration.json`, bound to the checkpoint hash
+and deterministic scoring version. Recalibrate after replacing the checkpoint.
+The default targets a 5% false-positive rate on the calibration sample; this is
+not a guarantee on future images. Evaluate normal and defective images on a
+separate set before relying on decisions. Do not calibrate on training images
+or select a threshold merely to make one uploaded defect pass.
+
+Inference now decodes the latent mean rather than sampling randomly. Previous
+evaluation CSV scores and thresholds must be regenerated. The committed legacy
+evaluation CSV has ROC-AUC approximately 0.409 and cannot establish reliable
+defect detection; a better-trained model may be required. No checkpoint or
+MVTec dataset is included in this repository.

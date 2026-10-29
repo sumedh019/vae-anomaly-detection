@@ -28,7 +28,7 @@ def record_inspection(filename: str, score: float, is_anomaly: bool):
         {
             "filename": filename,
             "anomaly_score": round(score, 4),
-            "verdict": "🚨 Anomaly" if is_anomaly else "✅ Normal",
+            "verdict": "🚨 Anomaly" if is_anomaly else "Below threshold",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
     )
@@ -42,4 +42,5 @@ def clear_history():
     st.session_state.inspection_history = []
     st.session_state.total_inspections = 0
     st.session_state.total_anomalies = 0
+    st.session_state.pop("last_inspection_key", None)
 
