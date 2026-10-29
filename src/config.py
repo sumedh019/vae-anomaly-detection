@@ -16,7 +16,24 @@ VERSION = "0.1.0"
 # Anomaly detection defaults
 # ──────────────────────────────────────────────
 DEFAULT_THRESHOLD = 0.5          # Default anomaly threshold (0-1)
-IMAGE_SIZE = (256, 256)          # Width × Height that images are resized to
+IMAGE_SIZE = (256, 256)          # Width × Height for the Streamlit dashboard
+
+# ──────────────────────────────────────────────
+# Dataset / model training
+# ──────────────────────────────────────────────
+DATASET_ROOT = r"C:\Users\HP\Downloads\mvtec_anomaly_detection\bottle"
+MODEL_IMAGE_SIZE = (128, 128)    # Width × Height for VAE training & inference
+BATCH_SIZE = 32
+NUM_WORKERS = 0                  # 0 = main process (safe default on Windows)
+
+# ──────────────────────────────────────────────
+# VAE model architecture
+# ──────────────────────────────────────────────
+LATENT_DIM = 128                 # Dimensionality of the latent space z
+ENCODER_CHANNELS = [32, 64, 128, 256]   # Conv channels per encoder stage
+KL_WEIGHT = 1.0                  # β weight for KL divergence (β-VAE)
+LEARNING_RATE = 1e-3             # Adam learning rate
+NUM_EPOCHS = 50                  # Training epochs (unused until training step)
 
 # ──────────────────────────────────────────────
 # Light-theme colour palette (used in charts & UI)

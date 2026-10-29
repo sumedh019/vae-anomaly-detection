@@ -1,8 +1,8 @@
 """
 1_🔍_Image_Inspection.py — Upload an image and view detection results.
 
-All outputs are clearly labelled as placeholder results until a real
-VAE model is integrated.
+Runs the VAE anomaly detection pipeline on uploaded images and visualizes
+the reconstruction, difference map, and anomaly heatmap.
 """
 
 import streamlit as st
@@ -61,7 +61,7 @@ if uploaded_file is not None:
     # Load image
     image = load_and_resize(uploaded_file)
 
-    # Run detection (placeholder)
+    # Run detection
     result = detect(image, threshold=threshold)
 
     # Record to history
@@ -85,12 +85,19 @@ if uploaded_file is not None:
             f"(threshold: {result.threshold:.2f})"
         )
 
-    st.warning(
-        "⚠️ **Placeholder result** — The VAE model has not been trained. "
-        "The reconstructed image is a Gaussian blur and the score is a "
-        "heuristic based on pixel differences.",
-        icon="⚠️",
-    )
+    if result.is_placeholder:
+        st.warning(
+            "⚠️ **Placeholder result** — The VAE model has not been trained. "
+            "The reconstructed image is a Gaussian blur and the score is a "
+            "heuristic based on pixel differences.",
+            icon="⚠️",
+        )
+    else:
+        st.info(
+            "ℹ️ **Real VAE inference** — Reconstruction and anomaly score were "
+            "computed using the trained Variational Autoencoder.",
+            icon="ℹ️",
+        )
 
     # ── 2 × 2 image panel ──────────────────
     st.subheader("Inspection Panels")
@@ -103,7 +110,12 @@ if uploaded_file is not None:
         st.image(result.original, use_container_width=True)
 
     with row1_col2:
-        st.markdown("##### 🔄 Reconstructed Image *(placeholder)*")
+        recon_title = (
+            "##### 🔄 Reconstructed Image (placeholder)"
+            if result.is_placeholder
+            else "##### 🔄 Reconstructed Image (VAE)"
+        )
+        st.markdown(recon_title)
         st.image(result.reconstructed, use_container_width=True)
 
     with row2_col1:
