@@ -25,6 +25,7 @@ import torch
 
 from src.config import (
     BATCH_SIZE,
+    DATASET_ROOT,
     ENCODER_CHANNELS,
     KL_WEIGHT,
     LATENT_DIM,
@@ -133,6 +134,7 @@ def train(
     encoder_channels: List[int] = ENCODER_CHANNELS,
     device_name: str = "cpu",
     seed: int = 42,
+    dataset_root: str = DATASET_ROOT,
 ) -> List[Dict]:
     """Run the full training loop and return the per-epoch history.
 
@@ -163,7 +165,7 @@ def train(
 
     # ── Data ──────────────────────────────────
     try:
-        train_loader = get_train_loader(batch_size=batch_size)
+        train_loader = get_train_loader(root=dataset_root, batch_size=batch_size)
     except FileNotFoundError as exc:
         print(f"[ERROR] Could not load training data:\n  {exc}")
         sys.exit(1)
@@ -305,6 +307,7 @@ def parse_args() -> argparse.Namespace:
         "--seed", type=int, default=42,
         help="Random seed for reproducibility (default: 42).",
     )
+    parser.add_argument("--dataset-root", default=DATASET_ROOT)
     return parser.parse_args()
 
 
@@ -318,4 +321,5 @@ if __name__ == "__main__":
         latent_dim=args.latent_dim,
         device_name=args.device,
         seed=args.seed,
+        dataset_root=args.dataset_root,
     )

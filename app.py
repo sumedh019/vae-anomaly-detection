@@ -89,12 +89,11 @@ st.markdown(
 """
 )
 
+from src.anomaly_detector import CHECKPOINT_PATH
 st.info(
-    "⚠️ **Note:** The VAE model has **not been trained yet**. "
-    "All detection results shown are **placeholder outputs** generated "
-    "from simple image-processing heuristics. They will be replaced "
-    "once a real model is integrated.",
-    icon="ℹ️",
+    f"Checkpoint found: {CHECKPOINT_PATH.name}. See Model Performance for loading status and saved results."
+    if CHECKPOINT_PATH.is_file() else
+    "No checkpoint installed. Add models/vae_bottle.pth to enable inference. Saved historical results may still be available."
 )
 
 # Footer

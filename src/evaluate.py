@@ -12,6 +12,10 @@ Outputs are written to outputs/evaluation_results.csv without modifying the mode
 """
 
 import argparse
+import json
+from PIL import Image
+from src.calibration import checkpoint_digest, SCORING_VERSION
+from src.performance import reconstruction_metrics
 import csv
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -221,7 +225,12 @@ def evaluate(
 
         # Use exact preprocessing as detector
         image_np = load_and_resize(img_path)
-        result = detect(image_np, threshold=threshold)
+        result = detect(image_np, threshold=threshold, checkpoint_path=checkpoint_path)
+        quality = reconstruction_metrics(image_np, result.reconstructed)
+        sample_dir = Path(output_csv).parent / "reconstructions"
+        sample_dir.mkdir(parents=True, exist_ok=True)
+        sample_path = sample_dir / f"{idx:05d}.png"
+        Image.fromarray(result.reconstructed).save(sample_path)
 
         score = float(result.anomaly_score)
         pred_anomaly = 1 if result.is_anomaly else 0
@@ -231,6 +240,8 @@ def evaluate(
         y_pred_list.append(pred_anomaly)
 
         records.append({
+            **quality,
+            "reconstruction_path": str(sample_path.resolve()),
             "filename": img_path.name,
             "category": category,
             "true_class": "normal" if is_true_anomaly == 0 else "anomaly",
@@ -240,7 +251,7 @@ def evaluate(
             "pred_label": pred_anomaly,
             "pred_verdict": "anomaly" if pred_anomaly == 1 else "normal",
             "is_correct": bool(is_true_anomaly == pred_anomaly),
-            "file_path": str(img_path),
+            "file_path": str(img_path.resolve()),
         })
 
     y_true = np.array(y_true_list, dtype=int)
@@ -251,6 +262,7 @@ def evaluate(
     output_csv = Path(output_csv)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     csv_columns = [
+        "mse", "ssim", "reconstruction_path",
         "filename",
         "category",
         "true_class",
@@ -266,6 +278,13 @@ def evaluate(
         writer = csv.DictWriter(f, fieldnames=csv_columns)
         writer.writeheader()
         writer.writerows(records)
+    output_csv.with_suffix(".json").write_text(json.dumps({
+        "checkpoint_sha256": checkpoint_digest(checkpoint_path),
+        "checkpoint_path": str(Path(checkpoint_path).resolve()),
+        "scoring_version": SCORING_VERSION,
+        "dataset_root": str(root_path.resolve()),
+        "threshold": threshold,
+    }, indent=2))
     print(f"Results saved to: {output_csv}")
 
     # ── Compute metrics ───────────────────────

@@ -36,6 +36,7 @@ CHECKPOINT_PATH = _PROJECT_ROOT / "models" / "vae_bottle.pth"
 # Module-level model cache
 # ──────────────────────────────────────────────
 _cached_model: Optional[VAE] = None
+_cached_key = None
 
 
 @dataclass
@@ -64,13 +65,11 @@ def _load_model(checkpoint_path: Optional[Path] = None) -> VAE:
     RuntimeError
         If the checkpoint is corrupt or incompatible with the model.
     """
-    global _cached_model
-    if _cached_model is not None:
+    global _cached_model, _cached_key
+    checkpoint_path = Path(checkpoint_path or CHECKPOINT_PATH).resolve()
+    key = (str(checkpoint_path), checkpoint_path.stat().st_mtime_ns) if checkpoint_path.is_file() else None
+    if _cached_model is not None and key is not None and key == _cached_key:
         return _cached_model
-
-    # Resolve path dynamically so monkeypatching works in tests
-    if checkpoint_path is None:
-        checkpoint_path = CHECKPOINT_PATH
 
     # ── Validate path ─────────────────────────
     if not checkpoint_path.is_file():
@@ -140,6 +139,7 @@ def _load_model(checkpoint_path: Optional[Path] = None) -> VAE:
 
     model.eval()
     _cached_model = model
+    _cached_key = key
     return model
 
 
@@ -207,6 +207,7 @@ def _compute_anomaly_score(
 def detect(
     image: np.ndarray,
     threshold: float = DEFAULT_THRESHOLD,
+    checkpoint_path: Optional[Path] = None,
 ) -> DetectionResult:
     """
     Run the full detection pipeline on a single image.
@@ -231,7 +232,7 @@ def detect(
         If the checkpoint is corrupt or incompatible.
     """
     # ── Load model (cached) ───────────────────
-    model = _load_model()
+    model = _load_model(checkpoint_path)
 
     # ── Preprocess ────────────────────────────
     input_tensor = _preprocess(image)               # (1, 3, 128, 128)
