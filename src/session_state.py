@@ -28,7 +28,7 @@ def record_inspection(filename: str, score: float, is_anomaly: bool):
         {
             "filename": filename,
             "anomaly_score": round(score, 4),
-            "verdict": "🚨 Anomaly" if is_anomaly else "Below threshold",
+            "verdict": "🚨 Anomaly" if is_anomaly else "✅ Normal",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
     )

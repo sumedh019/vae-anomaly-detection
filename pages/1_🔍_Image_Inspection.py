@@ -86,7 +86,7 @@ if uploaded_file is not None:
         st.stop()
 
     verdict = (
-        ("🚨 Anomaly" if result.is_anomaly else "Below threshold")
+        ("🚨 Anomaly" if result.is_anomaly else "✅ Normal")
         if can_classify else "Uncalibrated — review required"
     )
     if can_classify:

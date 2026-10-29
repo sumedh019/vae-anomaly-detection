@@ -103,7 +103,7 @@ The inspection page now withholds a verdict until a threshold is calibrated,
 unless you explicitly enable an experimental manual threshold. The old `0.5`
 default is not a validated decision boundary. A score is reconstruction error,
 not a probability that a product is defective; heatmap colours alone are not a
-verdict. “Below threshold” does not certify a defect-free product.
+verdict. “Normal” means the score is below the selected threshold; “Anomaly” means it is at or above the threshold. This does not certify a defect-free product.
 
 With your trained bottle checkpoint at `models/vae_bottle.pth`, use at least 20
 held-out known-good images from the same product category and capture conditions:
