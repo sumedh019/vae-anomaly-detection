@@ -84,14 +84,8 @@ def _load_model(checkpoint_path: Optional[Path] = None) -> VAE:
         checkpoint = torch.load(
             checkpoint_path, map_location="cpu", weights_only=True,
         )
-    except TypeError:
-        # Older PyTorch without weights_only parameter
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
-    except Exception:
-        # weights_only=True can reject some checkpoints; fall back
-        checkpoint = torch.load(
-            checkpoint_path, map_location="cpu", weights_only=False,
-        )
+    except Exception as exc:
+        raise RuntimeError("Checkpoint could not be loaded safely. Upload a PyTorch state dictionary or a checkpoint produced by src.train.") from exc
 
     # ── Extract state dict ────────────────────
     if isinstance(checkpoint, dict):

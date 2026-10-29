@@ -7,7 +7,8 @@ the reconstruction, difference map, and anomaly heatmap.
 
 import streamlit as st
 
-from src.anomaly_detector import detect
+from src.anomaly_detector import detect, CHECKPOINT_PATH
+from src.checkpoint_upload import save_uploaded_checkpoint
 from src.calibration import load_calibration
 from src.config import ALLOWED_EXTENSIONS, COLORS, DEFAULT_THRESHOLD, PROJECT_TITLE
 from src.image_processing import load_and_resize
@@ -31,6 +32,21 @@ st.markdown(LIGHT_THEME_CSS, unsafe_allow_html=True)
 st.title("🔍 Image Inspection")
 st.markdown("Upload an industrial product image to run anomaly detection.")
 
+checkpoint_path = CHECKPOINT_PATH
+uploaded_model = None
+with st.expander("Model checkpoint", expanded=not CHECKPOINT_PATH.is_file()):
+    st.caption("Upload your trained vae_bottle.pth if it is missing from the deployment. Uploads are temporary for this browser session; upload again after a restart.")
+    uploaded_model = st.file_uploader("Trained VAE checkpoint", type=["pth", "pt", "ckpt"], key="model_upload")
+    if uploaded_model is not None:
+        try:
+            checkpoint_path = save_uploaded_checkpoint(uploaded_model.getvalue(), st.session_state)
+            st.success("Uploaded checkpoint loaded successfully.")
+        except Exception as exc:
+            st.error(f"Cannot use checkpoint: {exc}")
+            st.stop()
+    elif not checkpoint_path.is_file():
+        st.warning("Upload the trained checkpoint above to enable inspection. The image alone cannot supply model weights.")
+
 st.divider()
 
 # ──────────────────────────────────────────────
@@ -47,7 +63,7 @@ with col_upload:
 
 with col_settings:
     try:
-        calibration = load_calibration()
+        calibration = load_calibration() if uploaded_model is None else None
     except (OSError, ValueError) as exc:
         calibration = None
         st.warning(f"Calibration unavailable: {exc}")
@@ -80,7 +96,7 @@ if uploaded_file is not None:
 
     # Run detection
     try:
-        result = detect(image, threshold=threshold)
+        result = detect(image, threshold=threshold, checkpoint_path=checkpoint_path)
     except (FileNotFoundError, RuntimeError, ValueError) as exc:
         st.error(f"Inspection unavailable: {exc}")
         st.stop()
@@ -92,7 +108,7 @@ if uploaded_file is not None:
     if can_classify:
         # Do not add duplicate records when unrelated widgets rerun the page.
         import hashlib
-        inspection_key = (hashlib.sha256(uploaded_file.getvalue()).hexdigest(), threshold)
+        inspection_key = (str(checkpoint_path), hashlib.sha256(uploaded_file.getvalue()).hexdigest(), threshold)
         if st.session_state.get("last_inspection_key") != inspection_key:
             record_inspection(
                 filename=uploaded_file.name,
